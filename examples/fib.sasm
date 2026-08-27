@@ -1,19 +1,16 @@
-; fib.sasm — Fibonacci(8) iterative for SUB-CPU
-; Copyright (C) 2026 Subho
-; SPDX-License-Identifier: GPL-3.0-or-later
+; fib.sasm — Fibonacci(10) on SUB64
+; Result will be in X2
+; Copyright (C) 2026 Subho — GPL v3
 
-LDI R0, 0        ; a = 0
-LDI R1, 1        ; b = 1
-LDI R3, 8        ; counter = 8
-LDI R4, 0        ; temp
+  LDIM  X0, 0        ; a = 0
+  LDIM  X1, 1        ; b = 1
+  LDIM  X23, 10      ; loop counter (X23 used by LOOP)
 
 loop:
-  ADD R4, R0, R1  ; temp = a + b
-  MOV R0, R1      ; a = b
-  MOV R1, R4      ; b = temp
-  LDI R5, 1
-  SUB R3, R3, R5  ; counter--
-  JNZ loop        ; loop if counter != 0
+  ADD   X4, X0, X1  ; temp = a + b
+  MOV   X0, X1      ; a = b
+  MOV   X1, X4      ; b = temp
+  LOOP  loop        ; X23--; if X23 != 0, branch
 
-MOV R2, R0       ; result in R2 (should be 21)
-HLT
+  MOV   X2, X0      ; result in X2
+  HLT

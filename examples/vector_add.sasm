@@ -1,0 +1,15 @@
+; vector_add.sasm — SUB64 SIMD / Vector example
+; Adds two 256-bit vectors (4 × 64-bit lanes)
+; Copyright (C) 2026 Subho — GPL v3
+
+  LDIM  X4, 0x1000   ; base address of vector A
+  LDIM  X5, 0x1020   ; base address of vector B
+  LDIM  X6, 0x1040   ; destination address
+
+  VLOAD V0, X4       ; V0 = MEM[X4..X4+31]  (256-bit load)
+  VLOAD V1, X5       ; V1 = MEM[X5..X5+31]
+
+  VADD.64 V2, V0, V1 ; V2 = V0 + V1 (4 × f64 lanes)
+
+  VSTORE X6, V2      ; store result
+  HLT

@@ -1,37 +1,49 @@
-# SUB-CPU Architecture
+# SUB64 — A 64-bit CPU Architecture
 
-> A custom 16-bit CPU architecture designed and built from scratch under the **SUB** brand.
+> An original **64-bit CPU architecture** designed from scratch under the **SUB** brand.  
+> SUB64 is **not x86, not ARM, not RISC-V** — it is its own thing.
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-[![Architecture](https://img.shields.io/badge/Architecture-16--bit-green.svg)]()
-[![Status](https://img.shields.io/badge/Status-WIP-orange.svg)]()
+[![Architecture](https://img.shields.io/badge/Architecture-64--bit-blueviolet.svg)]()
+[![ISA Style](https://img.shields.io/badge/ISA-RISC%2BVLIW%20Hybrid-orange.svg)]()
+[![Status](https://img.shields.io/badge/Status-WIP-yellow.svg)]()
 
 ---
 
-## What is SUB-CPU?
+## What Makes SUB64 Different?
 
-SUB-CPU is a fully custom 16-bit CPU architecture created from scratch. It includes:
+Most hobby CPUs are simplified RISC-V or MIPS clones. SUB64 is built with original ideas:
 
-- A clean, minimal **Instruction Set Architecture (ISA)**
-- A software **emulator** written in C
-- A hand-written **assembler** (`.sasm` → binary)
-- A growing **toolchain** for programs targeting SUB-CPU
-- Clear **documentation** for every component
-
-This project is part of the SUB brand — a personal systems-level engineering effort by [Subho](https://github.com/subhobhai943).
+| Feature | x86-64 | ARM64 | RISC-V | **SUB64** |
+|---|---|---|---|---|
+| Word Size | 64-bit | 64-bit | 64-bit | **64-bit** |
+| Instruction Width | Variable (1–15 B) | Fixed 32-bit | Fixed 32-bit | **Fixed 32-bit + 64-bit WIDE mode** |
+| Register Count | 16 | 31 | 32 | **24 GPR + 8 Vector** |
+| Calling Convention | Complex | AAPCS64 | RISC-V CC | **SUB ABI (custom)** |
+| ISA Style | CISC | RISC | RISC | **RISC + VLIW dual-issue slots** |
+| Predication | Partial | Full | None | **Full per-instruction predication** |
+| Immediate Width | Up to 32-bit | 16-bit | 12-bit | **Up to 48-bit inline immediate** |
+| Memory Model | TSO | Weak | Weak | **SUB-MO (custom ordered)** |
+| Privilege Levels | Ring 0–3 | EL0–EL3 | M/S/U | **SUB Ring 0–2 (Kernel/User/Guest)** |
 
 ---
 
 ## Architecture Overview
 
-| Feature | Value |
-|---|---|
-| Word Size | 16-bit |
-| Registers | 8 general-purpose (R0–R7) + PC + SP + FLAGS |
-| Addressing Modes | Immediate, Register, Direct, Indirect |
-| Memory | 64 KB (16-bit address space) |
-| Endianness | Little-endian |
-| Instruction Width | Fixed 16-bit (some 32-bit for immediates) |
+```
+┌─────────────────────────────────────────────────────────┐
+│                     SUB64 Core                          │
+│  ┌─────────┐  ┌─────────┐  ┌────────────┐  ┌────────┐  │
+│  │  Fetch  │→ │ Decode  │→ │  Execute   │→ │  WB    │  │
+│  │  Unit   │  │ (Dual   │  │ (ALU/FPU/  │  │ Stage  │  │
+│  │         │  │  Slot)  │  │  VPU/MEM)  │  │        │  │
+│  └─────────┘  └─────────┘  └────────────┘  └────────┘  │
+│                                                         │
+│  Registers: X0–X23 (GPR 64-bit) + V0–V7 (256-bit Vec)  │
+│  Special:   PC, SP, LR, FLAGS, KVEC, UVEC              │
+│  Memory:    48-bit virtual address space (256 TB)       │
+└─────────────────────────────────────────────────────────┘
+```
 
 ---
 
@@ -39,21 +51,28 @@ This project is part of the SUB brand — a personal systems-level engineering e
 
 ```
 SUB-CPU/
-├── docs/               # Architecture documentation
-│   └── ISA.md          # Full Instruction Set Reference
-├── emulator/           # C-based emulator source
-│   ├── cpu.c
+├── docs/
+│   ├── ISA.md            # Full ISA reference
+│   ├── ABI.md            # Calling convention & SUB ABI
+│   ├── MEMORY_MODEL.md   # SUB-MO memory ordering
+│   └── PRIV.md           # Privilege levels & rings
+├── emulator/
+│   ├── cpu.c             # Core emulator (fetch/decode/execute)
 │   ├── cpu.h
+│   ├── fpu.c             # Floating-point unit
+│   ├── vpu.c             # Vector processing unit
 │   └── main.c
-├── assembler/          # SASM assembler source
+├── assembler/
 │   ├── lexer.c
 │   ├── parser.c
+│   ├── encoder.c
 │   └── main.c
-├── examples/           # Example .sasm programs
+├── include/
+│   └── sub64.h           # Master header
+├── examples/
 │   ├── hello.sasm
-│   └── fib.sasm
-├── include/            # Shared headers
-│   └── sub_cpu.h
+│   ├── fib.sasm
+│   └── vector_add.sasm
 ├── Makefile
 ├── LICENSE
 └── README.md
@@ -61,79 +80,88 @@ SUB-CPU/
 
 ---
 
-## Getting Started
-
-### Build the Emulator
-
-```bash
-git clone https://github.com/subhobhai943/SUB-CPU.git
-cd SUB-CPU
-make emulator
-```
-
-### Build the Assembler
-
-```bash
-make assembler
-```
-
-### Run a Program
-
-```bash
-./assembler examples/hello.sasm -o hello.bin
-./emulator hello.bin
-```
-
----
-
 ## Registers
 
-| Register | Purpose |
-|---|---|
-| R0 – R7 | General-purpose 16-bit registers |
-| PC | Program Counter |
-| SP | Stack Pointer (starts at 0xFFFF) |
-| FLAGS | Zero (Z), Carry (C), Negative (N), Overflow (V) |
+### General Purpose Registers (64-bit)
+
+| Reg | ABI Name | Role |
+|-----|----------|------|
+| X0 | zero | Always 0 (writes ignored) |
+| X1 | ra | Return address |
+| X2 | sp | Stack pointer |
+| X3 | fp | Frame pointer |
+| X4–X7 | a0–a3 | Function arguments / return values |
+| X8–X15 | t0–t7 | Caller-saved temporaries |
+| X16–X23 | s0–s7 | Callee-saved saved registers |
+
+### Vector Registers (256-bit)
+
+| Reg | Width | Use |
+|-----|-------|-----|
+| V0–V7 | 256-bit | SIMD: 4×f64, 8×f32, 4×i64, 8×i32, 16×i16, 32×i8 |
+
+### Special Registers
+
+| Reg | Purpose |
+|-----|---------|
+| PC | Program counter (48-bit effective) |
+| FLAGS | ZCNVIP (Zero/Carry/Neg/oVerflow/Interrupt/Parity) |
+| LR | Link register (saved PC for CALL) |
+| KVEC | Kernel interrupt vector base |
+| UVEC | User trap vector base |
+| RING | Current privilege ring (0=kernel, 1=user, 2=guest) |
 
 ---
 
 ## Quick ISA Glimpse
 
 ```asm
-; Load immediate value 42 into R0
-LDI R0, 42
+; SUB64 Assembly — hello.sasm
 
-; Add R0 + R1 → R2
-ADD R2, R0, R1
+  LDIM  X4, 100      ; X4 = 100  (48-bit immediate)
+  LDIM  X5, 200      ; X5 = 200
+  ADD   X6, X4, X5  ; X6 = 300
 
-; Store R2 into memory address 0x1000
-STR R2, 0x1000
+; Predicated move: only if Zero flag set
+  MOVZ  X7, X6      ; X7 = X6 if Z==1
 
-; Halt
-HLT
+; Dual-issue WIDE instruction (two ops in one 64-bit word)
+  WIDE  ADD X8, X4, X5 | SUB X9, X5, X4
+
+  HLT
 ```
 
-See [`docs/ISA.md`](docs/ISA.md) for the full instruction reference.
+See [`docs/ISA.md`](docs/ISA.md) for the full reference.
+
+---
+
+## Building
+
+```bash
+git clone https://github.com/subhobhai943/SUB-CPU.git
+cd SUB-CPU
+make emulator       # Build the C emulator
+make assembler      # Build the SASM assembler
+./assembler examples/hello.sasm -o hello.bin
+./emulator hello.bin
+```
 
 ---
 
 ## Roadmap
 
-- [x] ISA design v1.0
-- [ ] Emulator (C)
-- [ ] Assembler (SASM)
-- [ ] Standard library
-- [ ] Interrupt & I/O model
-- [ ] Pipeline simulation
-- [ ] FPGA port (stretch goal)
+- [x] ISA design v1.0 (64-bit, RISC+VLIW hybrid)
+- [x] Register file design (24 GPR + 8 VEC)
+- [x] Memory model specification (SUB-MO)
+- [x] Privilege ring design (Ring 0/1/2)
+- [ ] Emulator core in C
+- [ ] Assembler (SASM → binary)
+- [ ] FPU simulation
+- [ ] VPU / SIMD simulation
+- [ ] Interrupt / exception model
+- [ ] Kernel ABI & syscall table
+- [ ] FPGA RTL port (Verilog)
 
 ---
 
-## License
-
-This project is licensed under the **GNU General Public License v3.0**.
-See [LICENSE](LICENSE) for details.
-
----
-
-<p align="center">Built with ❤️ by <a href="https://github.com/subhobhai943">Subho</a> · SUB Brand · 2026</p>
+<p align="center">Built with ❤️ by <a href="https://github.com/subhobhai943">Subho</a> · SUB Brand · 2026 · GPL v3</p>

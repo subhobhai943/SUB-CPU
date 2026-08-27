@@ -1,13 +1,10 @@
-; hello.sasm — Basic addition example for SUB-CPU
-; Copyright (C) 2026 Subho
-; SPDX-License-Identifier: GPL-3.0-or-later
+; hello.sasm — SUB64 Assembly Example
+; Loads two values, adds them, stores result
+; Copyright (C) 2026 Subho — GPL v3
 
-; Load immediate values
-LDI R0, 10       ; R0 = 10
-LDI R1, 32       ; R1 = 32
-
-; Add them
-ADD R2, R0, R1   ; R2 = R0 + R1 = 42
-
-; Halt
-HLT
+  LDIM  X4, 100       ; X4 = 100  (48-bit immediate)
+  LDIM  X5, 200       ; X5 = 200
+  ADD   X6, X4, X5   ; X6 = 300
+  CMP   X6, X4       ; set flags
+  MOVZ  X7, X6       ; X7 = X6 only if Z flag set
+  HLT
