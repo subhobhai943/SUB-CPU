@@ -1,0 +1,13 @@
+; hello.sasm — Basic addition example for SUB-CPU
+; Copyright (C) 2026 Subho
+; SPDX-License-Identifier: GPL-3.0-or-later
+
+; Load immediate values
+LDI R0, 10       ; R0 = 10
+LDI R1, 32       ; R1 = 32
+
+; Add them
+ADD R2, R0, R1   ; R2 = R0 + R1 = 42
+
+; Halt
+HLT

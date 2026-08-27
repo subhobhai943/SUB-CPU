@@ -1,0 +1,11 @@
+# Build artifacts
+build/
+*.o
+*.bin
+*.out
+emulator
+assembler
+
+# Editor
+.vscode/
+*.swp
