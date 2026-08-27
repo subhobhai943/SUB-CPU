@@ -1,0 +1,20 @@
+; syscall_test.sasm — Tests sys_write and sys_exit
+; Copyright (C) 2026 Subho — GPL v3
+
+  LDIM  X4, 0x200
+  LDIM  X5, 0x53202c6f6c6c6548
+  ST64  X4, X5, 0
+
+  LDIM  X5, 0x5550432034364255
+  ST64  X4, X5, 8
+
+  LDIM  X5, 0x0a21
+  ST16  X4, X5, 16
+
+  LDIM  X8, 1        ; syscall 1 = sys_write
+  LDIM  X4, 1        ; fd = stdout
+  LDIM  X5, 0x200    ; buf
+  LDIM  X6, 18       ; len
+  SYSCALL
+
+  HLT

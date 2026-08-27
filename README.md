@@ -135,16 +135,27 @@ See [`docs/ISA.md`](docs/ISA.md) for the full reference.
 
 ---
 
-## Building
+## Building & Running
 
 ```bash
 git clone https://github.com/subhobhai943/SUB-CPU.git
 cd SUB-CPU
-make emulator       # Build the C emulator
-make assembler      # Build the SASM assembler
-./assembler examples/hello.sasm -o hello.bin
-./emulator hello.bin
+make                # Build both emulator (sub64-emu) and assembler (sasm)
+
+# Assemble an example program:
+./sasm examples/hello.sasm -o hello.bin
+
+# Run on the SUB64 emulator (-d dumps CPU register state):
+./sub64-emu hello.bin -d
+
+# Disassemble a binary:
+./sdisasm hello.bin
+
+# Run the comprehensive test suite:
+make test
 ```
+
+Binaries are also placed in `bin/` (`bin/emulator`, `bin/assembler`, `bin/disassembler`).
 
 ---
 
@@ -154,12 +165,14 @@ make assembler      # Build the SASM assembler
 - [x] Register file design (24 GPR + 8 VEC)
 - [x] Memory model specification (SUB-MO)
 - [x] Privilege ring design (Ring 0/1/2)
-- [ ] Emulator core in C
-- [ ] Assembler (SASM → binary)
-- [ ] FPU simulation
-- [ ] VPU / SIMD simulation
-- [ ] Interrupt / exception model
-- [ ] Kernel ABI & syscall table
+- [x] Emulator core in C (Fetch / Decode / Execute, 70+ opcodes, 4 GB RAM)
+- [x] Assembler (SASM → 32-bit & 64-bit binary, label resolution)
+- [x] Dual-issue WIDE execution engine
+- [x] VPU / SIMD simulation (256-bit vectors, 4×64-bit lanes)
+- [x] Kernel ABI & syscall table (sys_exit, sys_write, sys_read)
+- [x] FPU 64-bit IEEE-754 simulation (FADD, FSUB, FMUL, FDIV, FSQRT, FCMP, FCVT)
+- [x] Interrupt / exception IVT model (Ring 0/1/2, KVEC base, traps, SYSRET)
+- [x] Disassembler tool (binary → readable SASM assembly with WIDE support)
 - [ ] FPGA RTL port (Verilog)
 
 ---

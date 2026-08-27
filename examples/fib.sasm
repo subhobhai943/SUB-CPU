@@ -1,16 +1,16 @@
 ; fib.sasm — Fibonacci(10) on SUB64
-; Result will be in X2
+; Result will be in X4 (a0 / return value per SUB64 ABI)
 ; Copyright (C) 2026 Subho — GPL v3
 
-  LDIM  X0, 0        ; a = 0
-  LDIM  X1, 1        ; b = 1
-  LDIM  X23, 10      ; loop counter (X23 used by LOOP)
+  LDIM  X8, 0        ; a = 0 (t0)
+  LDIM  X9, 1        ; b = 1 (t1)
+  LDIM  X23, 10      ; loop counter (X23 hardware loop register)
 
 loop:
-  ADD   X4, X0, X1  ; temp = a + b
-  MOV   X0, X1      ; a = b
-  MOV   X1, X4      ; b = temp
-  LOOP  loop        ; X23--; if X23 != 0, branch
+  ADD   X10, X8, X9  ; temp = a + b
+  MOV   X8, X9       ; a = b
+  MOV   X9, X10      ; b = temp
+  LOOP  loop         ; X23--; if X23 != 0, branch to loop
 
-  MOV   X2, X0      ; result in X2
+  MOV   X4, X8       ; result in X4 (Fibonacci(10) = 55)
   HLT

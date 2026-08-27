@@ -1,0 +1,60 @@
+; priv_trap.sasm — SUB64 Privilege & Exception Vector Test
+; Tests KVEC registration, division-by-zero trap, handler execution, and SYSRET
+; Copyright (C) 2026 Subho — GPL v3
+
+  JMPI   start
+
+  ; --- Interrupt Vector Table (IVT) ---
+  ; Each entry is 16 bytes (4 x 4-byte instructions)
+ivt_base:
+  ; Entry 0: Reset (0..15)
+  ADD    X0, X0, X0
+  ADD    X0, X0, X0
+  ADD    X0, X0, X0
+  SYSRET
+
+  ; Entry 1: Illegal Instruction (16..31)
+  ADD    X0, X0, X0
+  ADD    X0, X0, X0
+  ADD    X0, X0, X0
+  SYSRET
+
+  ; Entry 2: Page Fault Read (32..47)
+  ADD    X0, X0, X0
+  ADD    X0, X0, X0
+  ADD    X0, X0, X0
+  SYSRET
+
+  ; Entry 3: Page Fault Write (48..63)
+  ADD    X0, X0, X0
+  ADD    X0, X0, X0
+  ADD    X0, X0, X0
+  SYSRET
+
+  ; Entry 4: Alignment Fault (64..79)
+  ADD    X0, X0, X0
+  ADD    X0, X0, X0
+  ADD    X0, X0, X0
+  SYSRET
+
+  ; Entry 5: Arithmetic Trap (80..95)
+  ADDI   X15, X0, 42
+  SYSRET
+  ADD    X0, X0, X0
+  ADD    X0, X0, X0
+
+start:
+  ; Register KVEC base address
+  LDIM   X4, ivt_base
+  WSR    kvec, X4
+
+  ; Initialize X15 = 0
+  MOV    X15, X0
+
+  ; Trigger arithmetic trap: div by zero (X0 is 0)
+  LDIM   X5, 99
+  DIV    X6, X5, X0
+
+  ; When SYSRET returns here, X15 holds 42 from trap handler!
+  MOV    X4, X15
+  HLT

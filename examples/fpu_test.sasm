@@ -1,0 +1,30 @@
+; fpu_test.sasm — SUB64 IEEE-754 64-bit Floating-Point Unit Test
+; Copyright (C) 2026 Subho — GPL v3
+
+  ; Load integer 25 into X8
+  LDIM   X8, 25
+
+  ; Convert integer 25 to double-precision float in X4
+  FCVTIF X4, X8
+
+  ; Compute square root of 25.0 in X5 (should be 5.0)
+  FSQRT  X5, X4
+
+  ; Convert 5.0 float in X5 back to integer in X6 (should be 5)
+  FCVTFI X6, X5
+
+  ; Compute 5.0 + 5.0 = 10.0 in X7
+  FADD   X7, X5, X5
+
+  ; Compute 10.0 * 5.0 = 50.0 in X9
+  FMUL   X9, X7, X5
+
+  ; Compute 50.0 / 2.0 = 25.0
+  LDIM   X10, 2
+  FCVTIF X11, X10
+  FDIV   X12, X9, X11
+
+  ; Convert 25.0 back to integer in X4 (result)
+  FCVTFI X4, X12
+
+  HLT

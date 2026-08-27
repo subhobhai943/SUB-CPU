@@ -11,20 +11,20 @@ SUB64 has **two instruction widths**:
 
 ### Standard (32-bit)
 ```
-[31:26] OPCODE  (6 bits)   — 64 possible base opcodes
-[25:24] PRED    (2 bits)   — predicate condition
-[23:19] RD      (5 bits)   — destination register
-[18:14] RA      (5 bits)   — source A
-[13:9]  RB      (5 bits)   — source B
-[8:6]   FUNC    (3 bits)   — sub-function / shift amount class
-[5:0]   IMM6    (6 bits)   — small immediate or mode flags
+[31]    WIDE=0             — standard 32-bit instruction
+[30:24] OPCODE  (7 bits)   — 128 possible base opcodes (0x00–0x7F)
+[23:22] PRED    (2 bits)   — predicate condition (AL, EQ, NE, CS)
+[21:17] RD      (5 bits)   — destination register (X0–X23, V0–V7)
+[16:12] RA      (5 bits)   — source A
+[11:7]  RB      (5 bits)   — source B
+[6:0]   IMM7    (7 bits)   — small immediate / flags (IMM6 in [5:0])
 ```
 
 ### WIDE (64-bit) — dual-issue
 ```
-[63]    WIDE=1             — marks this as a 64-bit instruction
+[63]    WIDE=1             — marks this as a 64-bit instruction bundle
 [62:32] SLOT_A (31 bits)  — first operation (compact encoding)
-[31]    WIDE=1             — always 1
+[31]    WIDE=1             — always 1 for slot B in bundle
 [30:0]  SLOT_B (31 bits)  — second operation issued in parallel
 ```
 Both slots are executed in the **same cycle** on independent execution units.
@@ -159,18 +159,41 @@ This eliminates most conditional branches and enables if-conversion without bran
 | SEXT16 | 0x58 | Rd = sign_extend(Ra[15:0]) |
 | SEXT8 | 0x59 | Rd = sign_extend(Ra[7:0]) |
 
-### Vector / SIMD (OPCODE 0x20–0x2F on VPU lane)
+### Vector / SIMD (OPCODE 0x60–0x67 on VPU lane)
+ 
+| Mnemonic | OPCODE | Operation |
+|----------|--------|-----------|
+| VADD.64 | 0x60 | V_d = V_a + V_b (4×f64 / 4×i64 lanes) |
+| VSUB.64 | 0x61 | V_d = V_a - V_b |
+| VMUL.64 | 0x62 | V_d = V_a * V_b |
+| VDOT.64 | 0x63 | Scalar dot product of V_a · V_b → Rd |
+| VLOAD | 0x64 | V_d = MEM[Ra] (256-bit aligned) |
+| VSTORE | 0x65 | MEM[Ra] = V_d |
+| VSHUFFLE | 0x66 | V_d = shuffle(V_a, V_b mask) |
+| VBROADCAST | 0x67 | V_d = {Ra, Ra, Ra, Ra} |
 
-| Mnemonic | Operation |
-|----------|-----------|
-| VADD.64 | V_d = V_a + V_b (4×f64 lanes) |
-| VSUB.64 | V_d = V_a - V_b |
-| VMUL.64 | V_d = V_a * V_b |
-| VDOT.64 | Scalar dot product of V_a · V_b → Rd |
-| VLOAD | V_d = MEM[Ra] (256-bit aligned) |
-| VSTORE | MEM[Ra] = V_s |
-| VSHUFFLE | V_d = shuffle(V_a, imm8 mask) |
-| VBROADCAST | V_d = {Ra, Ra, Ra, Ra} |
+### Floating-Point Unit (OPCODE 0x68–0x71)
+
+| Mnemonic | OPCODE | Operation |
+|----------|--------|-----------|
+| FADD | 0x68 | Rd = Ra + Rb (64-bit IEEE-754 double) |
+| FSUB | 0x69 | Rd = Ra - Rb |
+| FMUL | 0x6A | Rd = Ra * Rb |
+| FDIV | 0x6B | Rd = Ra / Rb (traps on divide-by-zero) |
+| FNEG | 0x6C | Rd = -Ra (flips sign bit 63) |
+| FABS | 0x6D | Rd = abs(Ra) (clears sign bit 63) |
+| FSQRT | 0x6E | Rd = sqrt(Ra) |
+| FCMP | 0x6F | Compare Ra, Rb as double, sets FLAGS (Z/N/V) |
+| FCVTIF | 0x70 | Convert signed int64 in Ra to double in Rd |
+| FCVTFI | 0x71 | Convert double in Ra to signed int64 in Rd |
+
+### System & Special Registers (OPCODE 0x74–0x76)
+
+| Mnemonic | OPCODE | Operation |
+|----------|--------|-----------|
+| RSR | 0x74 | Rd = SREG[Ra] (Read special register: flags, kvec, uvec, ring, lr, pc) |
+| WSR | 0x75 | SREG[Rd] = Ra (Write special register — Ring 0 only, faults in Ring 1/2) |
+| INT | 0x76 | Software interrupt (triggers vector imm6 in IVT) |
 
 ---
 

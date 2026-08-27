@@ -1,0 +1,11 @@
+; wide_test.sasm — SUB64 Dual-Issue WIDE Mode Test
+; Executes two instructions in a single 64-bit bundle
+; Copyright (C) 2026 Subho — GPL v3
+
+  LDIM  X4, 10
+  LDIM  X5, 20
+
+  ; Dual-issue: X8 = X4 + X5 (30), X9 = X5 - X4 (10)
+  WIDE  ADD X8, X4, X5 | SUB X9, X5, X4
+
+  HLT
